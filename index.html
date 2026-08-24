@@ -8,28 +8,36 @@
         h1 { color: #2c3e50; }
         .drop-zone { border: 3px dashed #3498db; padding: 40px; text-align: center; background: #fff; cursor: pointer; border-radius: 8px; margin-top: 20px; }
         .drop-zone.dragover { background: #ecf0f1; border-color: #2980b9; }
-        #download-btn { display: none; margin-top: 20px; padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        #download-container { display: none; margin-top: 20px; }
+        #download-btn { padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
         #download-btn:hover { background: #219653; }
+        .ebird-link { display: inline-block; margin-left: 15px; color: #2980b9; text-decoration: none; font-weight: bold; }
+        .ebird-link:hover { text-decoration: underline; }
         pre { background: #eee; padding: 10px; border-radius: 5px; max-height: 200px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
     <h1>DOFbasen zu eBird Konverter</h1>
-    <p>Ziehe deine DOFbasen-CSV-Datei per Drag & Drop in das Feld unten, um sie in das eBird-Format zu konvertieren.</p>
+    <p>Ziehe deine DOFbasen-CSV-Datei per Drag & Drop in das Feld unten.</p>
 
     <div class="drop-zone" id="dropZone">
         DOFbasen CSV-Datei hierher ziehen oder klicken zum Auswählen
         <input type="file" id="fileInput" accept=".csv" style="display: none;">
     </div>
 
-    <button id="download-btn">eBird CSV herunterladen</button>
-    <h3>Vorschau des Log-Protokolls:</h3>
+    <div id="download-container">
+        <button id="download-btn">eBird CSV herunterladen</button>
+        <a href="https://ebird.org/import/upload.form" target="_blank" class="ebird-link">Direkt zu eBird Upload &rarr;</a>
+    </div>
+
+    <h3>Protokoll:</h3>
     <pre id="log">Bereit...</pre>
 
     <script>
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
+        const downloadContainer = document.getElementById('download-container');
         const downloadBtn = document.getElementById('download-btn');
         const log = document.getElementById('log');
 
@@ -55,10 +63,19 @@
         function handleFile(file) {
             logMessage(`Lese Datei: ${file.name}...`);
             const reader = new FileReader();
-            reader.readAsText(file, 'ISO-8859-1'); // DOFbasen nutzt meist ISO-8859-1 / Latin1
+            reader.readAsText(file, 'ISO-8859-1');
             reader.onload = function(e) {
                 parseDofbasen(e.target.result);
             };
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return "";
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return `${parts[1]}/${parts[2]}/${parts[0]}`;
+            }
+            return dateStr;
         }
 
         function parseDofbasen(text) {
@@ -74,60 +91,66 @@
             const idx = {
                 dato: getIndex('Dato'),
                 turtidfra: getIndex('Turtidfra'),
-                turtidtil: getIndex('Turtidtil'),
                 loknavn: getIndex('Loknavn'),
-                latin: getIndex('Latin'),
-                antal: getIndex('Antal'),
                 lat: getIndex('lok_breddegrad'),
                 lon: getIndex('lok_laengdegrad'),
+                latin: getIndex('Latin'),
+                antal: getIndex('Antal'),
                 turnoter: getIndex('Turnoter'),
                 fuglnoter: getIndex('Fuglnoter')
             };
 
-            // eBird Standard-Header (Beispiel basierend auf deinem ornitho2eBird-Beispiel)
-            let ebirdRows = [["Common Name", "Gen Species", "Count", "Location Name", "Latitude", "Longitude", "Date", "Time", "Duration", "Effort Distance", "Effort Area", "Protocol", "Comments", "All Observations Reported", "Age/Sex", "Details", "Breeding Code"]];
+            let ebirdRows = [[
+                "Species", "", "", "Count", "", "Location", "Latitude", "Longitude", 
+                "Date", "Time", "", "", "Protocol", "Duration", "Effort Distance", 
+                "All Observations Reported", "Effort Area", "", "Comments"
+            ]];
 
             let rowCount = 0;
             for (let i = 1; i < lines.length; i++) {
                 if (!lines[i].trim()) continue;
-                // Einfacher CSV Parser für Semikolon (berücksichtigt hier primär Basis-Spalten)
                 const cols = lines[i].split(';');
                 if (cols.length < headers.length) continue;
 
-                const date = cols[idx.dato];
+                const date = formatDate(cols[idx.dato]);
                 const time = cols[idx.turtidfra] || "";
-                const location = cols[idx.loknavn];
-                const scientificName = cols[idx.latin];
-                const count = cols[idx.antal];
-                const lat = cols[idx.lat];
-                const lon = cols[idx.lon];
+                const location = cols[idx.loknavn] || "";
+                const scientificName = cols[idx.latin] || "";
+                const count = cols[idx.antal] || "1";
+                const lat = cols[idx.lat] || "";
+                const lon = cols[idx.lon] || "";
                 const notes = [cols[idx.turnoter], cols[idx.fuglnoter]].filter(Boolean).join(" | ");
 
-                // eBird Zeile zusammenbauen
                 ebirdRows.push([
-                    scientificName, // als Artname
                     scientificName,
+                    "",
+                    "",
                     count,
+                    "",
                     location,
                     lat,
                     lon,
                     date,
                     time,
-                    "", "", "", // Dauer, Distanz, Fläche
-                    "Traveling", // Standard-Protokoll
-                    notes,
-                    "Y", // All observations reported
-                    "", "", ""
+                    "",
+                    "",
+                    "Traveling",
+                    "1",
+                    "",
+                    "Y",
+                    "",
+                    "",
+                    notes
                 ]);
                 rowCount++;
             }
 
-            convertedCsvContent = ebirdRows.map(e => e.join(",")).join("\n");
+            convertedCsvContent = ebirdRows.map(e => e.map(val => `"${val}"`).join(",")).join("\n");
             logMessage(`Erfolgreich ${rowCount} Beobachtungen konvertiert!`);
-            downloadBtn.style.display = 'block';
+            downloadContainer.style.display = 'block';
         }
 
-        downloadBtn.click = function() {
+        downloadBtn.onclick = function() {
             const blob = new Blob([convertedCsvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -137,7 +160,6 @@
             a.click();
             document.body.removeChild(a);
         };
-        downloadBtn.onclick = downloadBtn.click;
     </script>
 
 </body>
