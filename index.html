@@ -367,6 +367,26 @@
             return diff > 0 ? diff.toString() : "1";
         }
 
+        // CSV-Parser, der Semikolons innerhalb von Anführungszeichen ignoriert
+        function parseCSVLine(text) {
+            let result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < text.length; i++) {
+                let char = text[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ';' && !inQuotes) {
+                    result.push(current.trim().replace(/^["']|["']$/g, ''));
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim().replace(/^["']|["']$/g, ''));
+            return result;
+        }
+
         function parseDofbasen(text) {
             const lines = text.split(/\r\n|\n/);
             if (lines.length < 2) {
@@ -374,7 +394,7 @@
                 return;
             }
 
-            const headers = lines[0].split(';');
+            const headers = parseCSVLine(lines[0]);
             const getIndex = (names) => {
                 if (!Array.isArray(names)) names = [names];
                 for (let name of names) {
@@ -403,7 +423,7 @@
 
             for (let i = 1; i < lines.length; i++) {
                 if (!lines[i].trim()) continue;
-                const cols = lines[i].split(';');
+                const cols = parseCSVLine(lines[i]);
                 if (cols.length < headers.length) continue;
 
                 const species = cols[idx.artnavn] || "";
@@ -423,9 +443,12 @@
                     idx.turtidtil !== -1 ? cols[idx.turtidtil] : ""
                 );
                 
-                const birdDetails = idx.fuglnoter !== -1 ? (cols[idx.fuglnoter] || "") : "";
-                const medobserVal = idx.medobser !== -1 ? (cols[idx.medobser] || "") : "";
-                const turnoterVal = idx.turnoter !== -1 ? (cols[idx.turnoter] || "") : "";
+                // Entferne Kommas aus Notizen, damit das kommaseparierte eBird-Format nicht bricht
+                const cleanText = (str) => (str || "").replace(/,/g, ';').replace(/"/g, '""');
+
+                const birdDetails = cleanText(idx.fuglnoter !== -1 ? cols[idx.fuglnoter] : "");
+                const medobserVal = cleanText(idx.medobser !== -1 ? cols[idx.medobser] : "");
+                const turnoterVal = cleanText(idx.turnoter !== -1 ? cols[idx.turnoter] : "");
                 const checklistNotes = [medobserVal, turnoterVal].filter(Boolean).join(" | ");
 
                 let row = [
@@ -437,6 +460,7 @@
                 rowCount++;
             }
 
+            // Alle Felder sauber in Anführungszeichen setzen, ohne dass interne Kommas stören
             convertedCsvContent = ebirdRows.map(e => e.map(val => `"${val}"`).join(",")).join("\n");
             logMessage(`Erfolgreich ${rowCount} Beobachtungen konvertiert.`);
             actionsContainer.classList.add('visible');
