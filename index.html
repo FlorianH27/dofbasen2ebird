@@ -358,15 +358,6 @@
             return parts.length === 3 ? `${parts[1]}/${parts[2]}/${parts[0]}` : dateStr;
         }
 
-        function calculateDuration(startStr, endStr) {
-            if (!startStr || !endStr) return "1";
-            const [h1, m1] = startStr.split(':').map(Number);
-            const [h2, m2] = endStr.split(':').map(Number);
-            if (isNaN(h1) || isNaN(m1) || isNaN(h2) || isNaN(m2)) return "1";
-            const diff = (h2 * 60 + m2) - (h1 * 60 + m1);
-            return diff > 0 ? diff.toString() : "1";
-        }
-
         // CSV-Parser, der Semikolons innerhalb von Anführungszeichen ignoriert
         function parseCSVLine(text) {
             let result = [];
@@ -438,12 +429,7 @@
                 const lon = (idx.lon !== -1 ? cols[idx.lon] : "").replace(',', '.').trim();
                 const date = formatToEbirdDate(idx.dato !== -1 ? cols[idx.dato] : "") || "";
                 const time = idx.turtidfra !== -1 ? cols[idx.turtidfra] : "";
-                const duration = calculateDuration(
-                    idx.turtidfra !== -1 ? cols[idx.turtidfra] : "", 
-                    idx.turtidtil !== -1 ? cols[idx.turtidtil] : ""
-                );
                 
-                // Entferne Kommas aus Notizen, damit das kommaseparierte eBird-Format nicht bricht
                 const cleanText = (str) => (str || "").replace(/,/g, ';').replace(/"/g, '""');
 
                 const birdDetails = cleanText(idx.fuglnoter !== -1 ? cols[idx.fuglnoter] : "");
@@ -451,16 +437,21 @@
                 const turnoterVal = cleanText(idx.turnoter !== -1 ? cols[idx.turnoter] : "");
                 const checklistNotes = [medobserVal, turnoterVal].filter(Boolean).join(" | ");
 
+                // Exakte eBird 19-Spalten Reihenfolge basierend auf dem Referenz-Template:
+                // 0: Common Name, 1: Genus, 2: Species, 3: Count, 4: Details, 
+                // 5: Location Name, 6: Latitude, 7: Longitude, 8: Date, 9: Time, 
+                // 10: Duration (min), 11: Effort Distance (km), 12: Protocol, 
+                // 13: Number of Observers, 14: Effort Area, 15: All Observations Reported, 
+                // 16: State/Province (leer), 17: County (leer), 18: Comments
                 let row = [
                     species, "", "", count, birdDetails, locationName, lat, lon, date, time,
-                    "Stationary", duration, "", "", "", "Y", checklistNotes
+                    "", "", "Traveling", "1", "", "Y", "", "", checklistNotes
                 ];
 
                 ebirdRows.push(row);
                 rowCount++;
             }
 
-            // Alle Felder sauber in Anführungszeichen setzen, ohne dass interne Kommas stören
             convertedCsvContent = ebirdRows.map(e => e.map(val => `"${val}"`).join(",")).join("\n");
             logMessage(`Erfolgreich ${rowCount} Beobachtungen konvertiert.`);
             actionsContainer.classList.add('visible');
