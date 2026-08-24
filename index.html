@@ -94,16 +94,17 @@
                 loknavn: getIndex('Loknavn'),
                 lat: getIndex('lok_breddegrad'),
                 lon: getIndex('lok_laengdegrad'),
-                latin: getIndex('Latin'),
+                artnavn: getIndex('Artnavn'),
                 antal: getIndex('Antal'),
                 turnoter: getIndex('Turnoter'),
                 fuglnoter: getIndex('Fuglnoter')
             };
 
+            // Exakte 19 Spalten des eBird Standards
             let ebirdRows = [[
-                "Species", "", "", "Count", "", "Location", "Latitude", "Longitude", 
+                "Common Name", "", "", "Count", "", "Location Name", "Latitude", "Longitude", 
                 "Date", "Time", "", "", "Protocol", "Duration", "Effort Distance", 
-                "All Observations Reported", "Effort Area", "", "Comments"
+                "All Observations Reported", "Comments", "", ""
             ]];
 
             let rowCount = 0;
@@ -115,32 +116,32 @@
                 const date = formatDate(cols[idx.dato]);
                 const time = cols[idx.turtidfra] || "";
                 const location = cols[idx.loknavn] || "";
-                const scientificName = cols[idx.latin] || "";
+                const species = cols[idx.artnavn] || "";
                 const count = cols[idx.antal] || "1";
-                const lat = cols[idx.lat] || "";
-                const lon = cols[idx.lon] || "";
+                const lat = (cols[idx.lat] || "").replace(',', '.');
+                const lon = (cols[idx.lon] || "").replace(',', '.');
                 const notes = [cols[idx.turnoter], cols[idx.fuglnoter]].filter(Boolean).join(" | ");
 
                 ebirdRows.push([
-                    scientificName,
-                    "",
-                    "",
-                    count,
-                    "",
-                    location,
-                    lat,
-                    lon,
-                    date,
-                    time,
-                    "",
-                    "",
-                    "Traveling",
-                    "1",
-                    "",
-                    "Y",
-                    "",
-                    "",
-                    notes
+                    species,    // 0: Common Name
+                    "",         // 1
+                    "",         // 2
+                    count,      // 3: Count
+                    "",         // 4
+                    location,   // 5: Location Name
+                    lat,        // 6: Latitude
+                    lon,        // 7: Longitude
+                    date,       // 8: Date (MM/DD/YYYY)
+                    time,       // 9: Time (HH:MM)
+                    "",         // 10
+                    "",         // 11
+                    "Traveling",// 12: Protocol
+                    "1",        // 13: Duration
+                    "",         // 14
+                    "Y",        // 15: All Observations Reported
+                    notes,      // 16: Comments
+                    "",         // 17
+                    ""          // 18
                 ]);
                 rowCount++;
             }
