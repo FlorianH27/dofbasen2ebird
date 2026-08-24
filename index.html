@@ -265,7 +265,7 @@
                 <input type="text" id="query-observer" value="9990SKAF" oninput="updateDofLink()">
             </div>
             <div class="link-output-box">
-                <a id="dof-link" href="#" target="_blank" class="btn-box">DOFbasen Abfrage öffnen &rarr;</a>
+                <a id="dof-link" href="#" target="_blank" class="btn-box">DOFbasen-Abfrage starten &rarr;</a>
             </div>
         </div>
 
@@ -410,9 +410,8 @@
                 const notes = [cols[idx.turnoter], cols[idx.fuglnoter]].filter(Boolean).join(" | ");
 
                 let row = [
-                    species, "", "", count, "", location, lat, lon, date, time, "", "",
-                    "Traveling", duration, "", "Y", "", notes,
-                    '<small><a href="https://ornitho2ebird.com/" target="_blank" rel="noopener">Importiert mit ornitho2eBird.</a></small>'
+                    species, "", "", count, "", "Grenen", lat, lon, date, time,
+                    "Stationary", duration, "", "", "", "Y", notes
                 ];
 
                 ebirdRows.push(row);
