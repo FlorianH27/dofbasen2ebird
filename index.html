@@ -371,17 +371,17 @@
             return result;
         }
 
-        function calculateDuration(startStr, endStr) {
-            if (!startStr || !endStr) return "5";
+        function calculateDurationMinutes(startStr, endStr) {
+            if (!startStr || !endStr) return 60;
             const partsStart = startStr.trim().split(':');
             const partsEnd = endStr.trim().split(':');
-            if (partsStart.length < 2 || partsEnd.length < 2) return "5";
+            if (partsStart.length < 2 || partsEnd.length < 2) return 60;
 
             const startMinutes = parseInt(partsStart[0]) * 60 + parseInt(partsStart[1]);
             const endMinutes = parseInt(partsEnd[0]) * 60 + parseInt(partsEnd[1]);
             
             const diff = endMinutes - startMinutes;
-            return diff > 0 ? diff.toString() : "5";
+            return diff > 0 ? diff : 60;
         }
 
         function parseDofbasen(text) {
@@ -418,14 +418,6 @@
             let ebirdRows = [];
             let rowCount = 0;
 
-            ebirdRows.push([
-                "Common Name", "Genus", "Species", "Count", "Details", 
-                "Location Name", "Latitude", "Longitude", "Date", "Time", 
-                "Duration (min)", "Effort Distance (km)", "Protocol", 
-                "Number of Observers", "Effort Area", "All Observations Reported", 
-                "State/Province", "County", "Comments"
-            ]);
-
             for (let i = 1; i < lines.length; i++) {
                 if (!lines[i].trim()) continue;
                 const cols = parseCSVLine(lines[i]);
@@ -436,15 +428,18 @@
                 
                 const locationName = (idx.lokalitet !== -1) ? (cols[idx.lokalitet] || "").trim() : "";
 
-                const lat = (idx.lat !== -1 ? cols[idx.lat] : "").replace(',', '.').trim();
-                const lon = (idx.lon !== -1 ? cols[idx.lon] : "").replace(',', '.').trim();
+                const rawLat = idx.lat !== -1 ? cols[idx.lat] : "";
+                const rawLon = idx.lon !== -1 ? cols[idx.lon] : "";
+                const lat = rawLat ? rawLat.replace(',', '.') : "";
+                const lon = rawLon ? rawLon.replace(',', '.') : "";
                 
+                // Datum im Format MM/TT/JJJJ wie im eBird-Beispiel
                 let rawDate = idx.dato !== -1 ? cols[idx.dato] : "";
                 let date = "";
                 if (rawDate) {
                     const p = rawDate.split('-');
                     if (p.length === 3) {
-                        date = `${p[1]}/${p[2]}/${p[0]}`;
+                        date = `${p[1]}/${p[2]}/${p[0]}`; // MM/DD/YYYY
                     } else {
                         date = rawDate;
                     }
@@ -452,7 +447,7 @@
                 
                 const startTime = idx.turtidfra !== -1 ? cols[idx.turtidfra] : "";
                 const endTime = idx.turtidtil !== -1 ? cols[idx.turtidtil] : "";
-                const duration = calculateDuration(startTime, endTime);
+                const duration = calculateDurationMinutes(startTime, endTime);
                 
                 const cleanText = (str) => (str || "").replace(/,/g, ';').replace(/"/g, '""');
 
@@ -461,15 +456,35 @@
                 const turnoterVal = cleanText(idx.turnoter !== -1 ? cols[idx.turnoter] : "");
                 const checklistNotes = [medobserVal, turnoterVal].filter(Boolean).join(" | ");
 
-                let observerCount = "1";
+                let observerCount = 1;
                 if (medobserVal) {
                     const splitObservers = medobserVal.split(/[,;]/);
-                    observerCount = (splitObservers.length + 1).toString();
+                    observerCount = splitObservers.length + 1;
                 }
 
+                // Exakte Spaltenreihenfolge ohne Kopfzeile laut eBird/ornitho-Beispiel:
+                // 0: Common Name
+                // 1: Genus (leer)
+                // 2: Species (leer)
+                // 3: Count
+                // 4: Details
+                // 5: Location Name
+                // 6: Latitude
+                // 7: Longitude
+                // 8: Date (MM/DD/YYYY)
+                // 9: Time
+                // 10: Duration (min) - leer bei manchen Templates oder belegt
+                // 11: Effort Distance (km) - leer
+                // 12: Protocol ("Stationary")
+                // 13: Number of Observers
+                // 14: Effort Area / Duration value depending on slot
+                // 15: All Observations Reported ("Y")
+                // 16: State/Province (leer)
+                // 17: County (leer)
+                // 18: Comments
                 let row = [
                     species, "", "", count, birdDetails, locationName, lat, lon, date, startTime,
-                    duration, "", "stationary", observerCount, "", "Y", "", "", checklistNotes
+                    "", "", "Stationary", observerCount, duration, "Y", "", "", checklistNotes
                 ];
 
                 ebirdRows.push(row);
