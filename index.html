@@ -27,7 +27,7 @@
 <body>
 
     <h1>DOFbasen zu eBird Konverter</h1>
-    <p>Konvertiere deine exportierte DOFbasen-CSV in das eBird-Format.</p>
+    <p>Konvertiere deine exportierte DOFbasen-CSV in das eBird-Format (exakt nach ornitho2eBird-Standard).</p>
 
     <!-- DOFbasen Abfrage-Parameter & Link-Generierung -->
     <div class="query-box">
@@ -102,7 +102,6 @@
             linkElem.textContent = url;
         }
 
-        // Initiale Link-Erstellung beim Laden
         updateDofLink();
 
         const dropZone = document.getElementById('dropZone');
@@ -148,6 +147,15 @@
             return dateStr;
         }
 
+        function calculateDuration(startStr, endStr) {
+            if (!startStr || !endStr) return "1";
+            const [h1, m1] = startStr.split(':').map(Number);
+            const [h2, m2] = endStr.split(':').map(Number);
+            if (isNaN(h1) || isNaN(m1) || isNaN(h2) || isNaN(m2)) return "1";
+            const diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+            return diff > 0 ? diff.toString() : "1";
+        }
+
         function parseDofbasen(text) {
             const lines = text.split(/\r\n|\n/);
             if (lines.length < 2) {
@@ -161,6 +169,7 @@
             const idx = {
                 dato: getIndex('Dato'),
                 turtidfra: getIndex('Turtidfra'),
+                turtidtil: getIndex('Turtidtil'),
                 loknavn: getIndex('Loknavn'),
                 lat: getIndex('lok_breddegrad'),
                 lon: getIndex('lok_laengdegrad'),
@@ -170,11 +179,7 @@
                 fuglnoter: getIndex('Fuglnoter')
             };
 
-            let ebirdRows = [[
-                "Common Name", "", "", "Count", "", "Location Name", "Latitude", "Longitude", 
-                "Date", "Time", "", "", "Protocol", "Duration", "Effort Distance", 
-                "All Observations Reported", "Comments", "", ""
-            ]];
+            let ebirdRows = [];
 
             let rowCount = 0;
             for (let i = 1; i < lines.length; i++) {
@@ -182,39 +187,44 @@
                 const cols = lines[i].split(';');
                 if (cols.length < headers.length) continue;
 
-                const date = formatToEbirdDate(cols[idx.dato]) || "";
-                const time = cols[idx.turtidfra] || "";
-                const location = cols[idx.loknavn] || "";
                 const species = cols[idx.artnavn] || "";
                 const count = cols[idx.antal] || "";
-                const lat = (cols[idx.lat] || "").replace(',', '.');
-                const lon = (cols[idx.lon] || "").replace(',', '.');
+                const location = cols[idx.loknavn] || "";
+                const lat = (cols[idx.lat] || "").replace(',', '.').trim();
+                const lon = (cols[idx.lon] || "").replace(',', '.').trim();
+                const date = formatToEbirdDate(cols[idx.dato]) || "";
+                const time = cols[idx.turtidfra] || "";
+                const duration = calculateDuration(cols[idx.turtidfra], cols[idx.turtidtil]);
                 const notes = [cols[idx.turnoter], cols[idx.fuglnoter]].filter(Boolean).join(" | ");
 
-                ebirdRows.push([
-                    species,
-                    "",
-                    "",
-                    count,
-                    "",
-                    location,
-                    lat,
-                    lon,
-                    date,
-                    time,
-                    "",
-                    "",
-                    "Traveling",
-                    "1",
-                    "",
-                    "Y",
-                    notes,
-                    "",
-                    ""
-                ]);
+                // Exakter 19-Spalten-Array gemäß ornitho2eBird Vorlage
+                let row = [
+                    species,                                                                           // 0
+                    "",                                                                                // 1
+                    "",                                                                                // 2
+                    count,                                                                             // 3
+                    "",                                                                                // 4
+                    location,                                                                          // 5
+                    lat,                                                                               // 6
+                    lon,                                                                               // 7
+                    date,                                                                              // 8
+                    time,                                                                              // 9
+                    "",                                                                                // 10
+                    "",                                                                                // 11
+                    "Traveling",                                                                       // 12
+                    duration,                                                                          // 13
+                    "",                                                                                // 14
+                    "Y",                                                                               // 15
+                    notes,                                                                             // 16
+                    "",                                                                                // 17
+                    '<small><a href="https://ornitho2ebird.com/" target="_blank" rel="noopener">Importiert mit ornitho2eBird.</a></small>' // 18
+                ];
+
+                ebirdRows.push(row);
                 rowCount++;
             }
 
+            // Generiere CSV ohne Header-Zeile (genau wie im Referenzfile)
             convertedCsvContent = ebirdRows.map(e => e.map(val => `"${val}"`).join(",")).join("\n");
             logMessage(`Erfolgreich ${rowCount} Beobachtungen konvertiert!`);
             downloadContainer.style.display = 'block';
