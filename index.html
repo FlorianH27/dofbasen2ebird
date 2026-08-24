@@ -2,69 +2,285 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>DOFbasen to eBird Converter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOFbasen &rarr; eBird Converter</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #f9f9f9; color: #333; }
-        h1 { color: #2c3e50; }
-        .drop-zone { border: 3px dashed #3498db; padding: 30px; text-align: center; background: #fff; cursor: pointer; border-radius: 8px; margin-top: 20px; }
-        .drop-zone.dragover { background: #ecf0f1; border-color: #2980b9; }
-        .query-box { background: #fff; padding: 20px; border-radius: 8px; margin-top: 20px; border: 1px solid #ddd; }
-        .query-box h3 { margin-top: 0; color: #2c3e50; }
-        .form-group { margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
-        .form-group label { flex: 1; font-weight: bold; font-size: 14px; }
-        .form-group input { flex: 2; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
-        .link-display { margin-top: 15px; padding: 10px; background: #f1f1f1; border-radius: 4px; word-break: break-all; font-family: monospace; font-size: 12px; }
-        .link-display a { color: #2980b9; text-decoration: none; }
-        .link-display a:hover { text-decoration: underline; }
-        #download-container { display: none; margin-top: 20px; }
-        #download-btn { padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        #download-btn:hover { background: #219653; }
-        .ebird-link { display: inline-block; margin-left: 15px; color: #2980b9; text-decoration: none; font-weight: bold; }
-        .ebird-link:hover { text-decoration: underline; }
-        pre { background: #eee; padding: 10px; border-radius: 5px; max-height: 150px; overflow-y: auto; }
+        :root {
+            --bg-color: #f7f8fa;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --primary: #0f172a;
+            --primary-hover: #334155;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 640px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+            padding: 40px;
+            border: 1px solid var(--border);
+        }
+
+        header {
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+
+        p.subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .query-box {
+            background: #fafafa;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full {
+            grid-column: span 2;
+        }
+
+        label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        input[type="date"], input[type="text"] {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            background: #fff;
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="date"]:focus, input[type="text"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .link-output {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .link-output a {
+            font-size: 12px;
+            color: var(--accent);
+            text-decoration: none;
+            word-break: break-all;
+            flex: 1;
+        }
+
+        .link-output a:hover {
+            text-decoration: underline;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            background: #fafafa;
+            padding: 32px 20px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--accent);
+            background: rgba(37, 99, 235, 0.02);
+        }
+
+        .drop-zone p {
+            font-size: 14px;
+            color: var(--text-main);
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .drop-zone span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .actions {
+            display: none;
+            margin-top: 24px;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .actions.visible {
+            display: flex;
+        }
+
+        button {
+            flex: 1;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: #f1f5f9;
+        }
+
+        .log-box {
+            margin-top: 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 14px 16px;
+            border-radius: 6px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 12px;
+            max-height: 120px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .log-box.visible {
+            display: block;
+        }
     </style>
 </head>
 <body>
 
-    <h1>DOFbasen zu eBird Konverter</h1>
-    <p>Konvertiere deine exportierte DOFbasen-CSV in das eBird-Format (exakt nach ornitho2eBird-Standard).</p>
+    <div class="container">
+        <header>
+            <h1>DOFbasen &rarr; eBird</h1>
+            <p class="subtitle">Konvertiere deine DOFbasen-Exporte sekundenschnell und fehlerfrei in das eBird-Format.</p>
+        </header>
 
-    <!-- DOFbasen Abfrage-Parameter & Link-Generierung -->
-    <div class="query-box">
-        <h3>DOFbasen Abfrage-Parameter</h3>
-        <div class="form-group">
-            <label for="query-date-from">Datum von:</label>
-            <input type="date" id="query-date-from" onchange="updateDofLink()">
+        <div class="section-title">1. DOFbasen Abfrage-Link generieren</div>
+        <div class="query-box">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="query-date-from">Von Datum</label>
+                    <input type="date" id="query-date-from" onchange="updateDofLink()">
+                </div>
+                <div class="form-group">
+                    <label for="query-date-to">Bis Datum</label>
+                    <input type="date" id="query-date-to" onchange="updateDofLink()">
+                </div>
+            </div>
+            <div class="form-group full">
+                <label for="query-observer">Beobachter Kürzel (Observer)</label>
+                <input type="text" id="query-observer" value="9990SKAF" oninput="updateDofLink()">
+            </div>
+            <div class="link-output">
+                <a id="dof-link" href="#" target="_blank">-</a>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="query-date-to">Datum bis:</label>
-            <input type="date" id="query-date-to" onchange="updateDofLink()">
+
+        <div class="section-title">2. CSV-Datei konvertieren</div>
+        <div class="drop-zone" id="dropZone">
+            <p>CSV-Datei hierher ziehen oder klicken</p>
+            <span>Unterstützt DOFbasen Export-Dateien (.csv)</span>
+            <input type="file" id="fileInput" accept=".csv">
         </div>
-        <div class="form-group">
-            <label for="query-observer">Beobachter (Observer):</label>
-            <input type="text" id="query-observer" value="9990SKAF" oninput="updateDofLink()">
-        </div>
-        <div class="link-display">
-            <strong>DOFbasen Abfragelink:</strong><br>
-            <a id="dof-link" href="#" target="_blank">-</a>
+
+        <div class="log-box" id="logBox">Bereit...</div>
+
+        <div class="actions" id="actionsContainer">
+            <button id="downloadBtn">eBird CSV herunterladen</button>
+            <button class="btn-secondary" onclick="window.open('https://ebird.org/import/upload.form', '_blank')">Zu eBird Upload</button>
         </div>
     </div>
-
-    <div class="drop-zone" id="dropZone">
-        DOFbasen CSV-Datei hierher ziehen oder klicken zum Auswählen
-        <input type="file" id="fileInput" accept=".csv" style="display: none;">
-    </div>
-
-    <div id="download-container">
-        <button id="download-btn">eBird CSV herunterladen</button>
-        <a href="https://ebird.org/import/upload.form" target="_blank" class="ebird-link">Direkt zu eBird Upload &rarr;</a>
-    </div>
-
-    <h3>Protokoll:</h3>
-    <pre id="log">Bereit...</pre>
 
     <script>
-        // Setze Standard-Datum: "von" = gestern, "bis" = heute
         const today = new Date();
         const yyyyToday = today.getFullYear();
         const mmToday = String(today.getMonth() + 1).padStart(2, '0');
@@ -81,19 +297,13 @@
         function formatDateForDof(dateStr) {
             if (!dateStr) return "";
             const parts = dateStr.split('-');
-            if (parts.length === 3) {
-                return `${parts[2]}-${parts[1]}-${parts[0]}`;
-            }
-            return dateStr;
+            return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : dateStr;
         }
 
         function updateDofLink() {
-            const dateFromInput = document.getElementById('query-date-from').value;
-            const dateToInput = document.getElementById('query-date-to').value;
+            const dateFrom = formatDateForDof(document.getElementById('query-date-from').value);
+            const dateTo = formatDateForDof(document.getElementById('query-date-to').value);
             const observer = document.getElementById('query-observer').value;
-
-            const dateFrom = formatDateForDof(dateFromInput);
-            const dateTo = formatDateForDof(dateToInput);
 
             const url = `https://dofbasen.dk/excel/search_result1.php?design=excel&soeg=soeg&periode=mellemdato&dato_first=${dateFrom}&dato_second=${dateTo}&obstype=observationer&species=alle&obserdata=${observer}&summering=yes&metode=17&sortering=dato`;
             
@@ -106,9 +316,9 @@
 
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
-        const downloadContainer = document.getElementById('download-container');
+        const actionsContainer = document.getElementById('actionsContainer');
         const downloadBtn = document.getElementById('download-btn');
-        const log = document.getElementById('log');
+        const logBox = document.getElementById('logBox');
 
         let convertedCsvContent = "";
 
@@ -125,12 +335,13 @@
         });
 
         function logMessage(msg) {
-            log.textContent += "\n" + msg;
-            log.scrollTop = log.scrollHeight;
+            logBox.classList.add('visible');
+            logBox.textContent += "\n" + msg;
+            logBox.scrollTop = logBox.scrollHeight;
         }
 
         function handleFile(file) {
-            logMessage(`Lese Datei: ${file.name}...`);
+            logBox.textContent = `Lese ${file.name}...`;
             const reader = new FileReader();
             reader.readAsText(file, 'ISO-8859-1');
             reader.onload = function(e) {
@@ -141,10 +352,7 @@
         function formatToEbirdDate(dateStr) {
             if (!dateStr) return "";
             const parts = dateStr.split('-');
-            if (parts.length === 3) {
-                return `${parts[1]}/${parts[2]}/${parts[0]}`;
-            }
-            return dateStr;
+            return parts.length === 3 ? `${parts[1]}/${parts[2]}/${parts[0]}` : dateStr;
         }
 
         function calculateDuration(startStr, endStr) {
@@ -159,7 +367,7 @@
         function parseDofbasen(text) {
             const lines = text.split(/\r\n|\n/);
             if (lines.length < 2) {
-                logMessage("Fehler: Die Datei scheint leer zu sein.");
+                logMessage("Fehler: Die Datei ist leer.");
                 return;
             }
 
@@ -180,8 +388,8 @@
             };
 
             let ebirdRows = [];
-
             let rowCount = 0;
+
             for (let i = 1; i < lines.length; i++) {
                 if (!lines[i].trim()) continue;
                 const cols = lines[i].split(';');
@@ -197,28 +405,10 @@
                 const duration = calculateDuration(cols[idx.turtidfra], cols[idx.turtidtil]);
                 const notes = [cols[idx.turnoter], cols[idx.fuglnoter]].filter(Boolean).join(" | ");
 
-                // Exakter 19-Spalten-Array exakt nach ornitho2eBird-Struktur:
-                // Spalte 17 (Index 16) bleibt numerisch leer bzw. unbesetzt, Notizen wandern ans Ende.
                 let row = [
-                    species,                                                                           // 0: Artnavn
-                    "",                                                                                // 1
-                    "",                                                                                // 2
-                    count,                                                                             // 3: Antal
-                    "",                                                                                // 4
-                    location,                                                                          // 5: Loknavn
-                    lat,                                                                               // 6: Latitude
-                    lon,                                                                               // 7: Longitude
-                    date,                                                                              // 8: Date
-                    time,                                                                              // 9: Time
-                    "",                                                                                // 10
-                    "",                                                                                // 11
-                    "Traveling",                                                                       // 12: Protocol
-                    duration,                                                                          // 13: Duration
-                    "",                                                                                // 14: Distance
-                    "Y",                                                                               // 15: All obs reported
-                    "",                                                                                // 16: Numerisches Feld (leer gelassen statt Notizen)
-                    notes,                                                                             // 17: Kommentare / Turnoter
-                    '<small><a href="https://ornitho2ebird.com/" target="_blank" rel="noopener">Importiert mit ornitho2eBird.</a></small>' // 18
+                    species, "", "", count, "", location, lat, lon, date, time, "", "",
+                    "Traveling", duration, "", "Y", "", notes,
+                    '<small><a href="https://ornitho2ebird.com/" target="_blank" rel="noopener">Importiert mit ornitho2eBird.</a></small>'
                 ];
 
                 ebirdRows.push(row);
@@ -226,8 +416,8 @@
             }
 
             convertedCsvContent = ebirdRows.map(e => e.map(val => `"${val}"`).join(",")).join("\n");
-            logMessage(`Erfolgreich ${rowCount} Beobachtungen konvertiert!`);
-            downloadContainer.style.display = 'block';
+            logMessage(`Erfolgreich ${rowCount} Beobachtungen konvertiert.`);
+            actionsContainer.classList.add('visible');
         }
 
         downloadBtn.onclick = function() {
@@ -241,6 +431,5 @@
             document.body.removeChild(a);
         };
     </script>
-
 </body>
 </html>
