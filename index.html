@@ -13,6 +13,9 @@
         .form-group { margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
         .form-group label { flex: 1; font-weight: bold; font-size: 14px; }
         .form-group input { flex: 2; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+        .link-display { margin-top: 15px; padding: 10px; background: #f1f1f1; border-radius: 4px; word-break: break-all; font-family: monospace; font-size: 12px; }
+        .link-display a { color: #2980b9; text-decoration: none; }
+        .link-display a:hover { text-decoration: underline; }
         #download-container { display: none; margin-top: 20px; }
         #download-btn { padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
         #download-btn:hover { background: #219653; }
@@ -26,22 +29,25 @@
     <h1>DOFbasen zu eBird Konverter</h1>
     <p>Konvertiere deine exportierte DOFbasen-CSV in das eBird-Format.</p>
 
-    <!-- Abfrage-Parameter (Datumsbereich von gestern bis heute, Observer) -->
+    <!-- DOFbasen Abfrage-Parameter & Link-Generierung -->
     <div class="query-box">
         <h3>DOFbasen Abfrage-Parameter</h3>
         <div class="form-group">
-            <label for="query-date-from">Datum von (Standard: Gestern):</label>
-            <input type="date" id="query-date-from">
+            <label for="query-date-from">Datum von:</label>
+            <input type="date" id="query-date-from" onchange="updateDofLink()">
         </div>
         <div class="form-group">
-            <label for="query-date-to">Datum bis (Standard: Heute):</label>
-            <input type="date" id="query-date-to">
+            <label for="query-date-to">Datum bis:</label>
+            <input type="date" id="query-date-to" onchange="updateDofLink()">
         </div>
         <div class="form-group">
             <label for="query-observer">Beobachter (Observer):</label>
-            <input type="text" id="query-observer" value="Skagen Fuglestation">
+            <input type="text" id="query-observer" value="9990SKAF" oninput="updateDofLink()">
         </div>
-        <p style="font-size: 12px; color: #666; margin-bottom: 0;">Hinweis: Alle Daten (Art, Anzahl, Datum, Uhrzeit, Ort, Koordinaten, Notizen) werden ausschließlich aus den jeweiligen Spalten der hochgeladenen CSV ausgelesen.</p>
+        <div class="link-display">
+            <strong>DOFbasen Abfragelink:</strong><br>
+            <a id="dof-link" href="#" target="_blank">-</a>
+        </div>
     </div>
 
     <div class="drop-zone" id="dropZone">
@@ -71,6 +77,33 @@
         const mmYest = String(yesterday.getMonth() + 1).padStart(2, '0');
         const ddYest = String(yesterday.getDate()).padStart(2, '0');
         document.getElementById('query-date-from').value = `${yyyyYest}-${mmYest}-${ddYest}`;
+
+        function formatDateForDof(dateStr) {
+            if (!dateStr) return "";
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            return dateStr;
+        }
+
+        function updateDofLink() {
+            const dateFromInput = document.getElementById('query-date-from').value;
+            const dateToInput = document.getElementById('query-date-to').value;
+            const observer = document.getElementById('query-observer').value;
+
+            const dateFrom = formatDateForDof(dateFromInput);
+            const dateTo = formatDateForDof(dateToInput);
+
+            const url = `https://dofbasen.dk/excel/search_result1.php?design=excel&soeg=soeg&periode=mellemdato&dato_first=${dateFrom}&dato_second=${dateTo}&obstype=observationer&species=alle&obserdata=${observer}&summering=yes&metode=17&sortering=dato`;
+            
+            const linkElem = document.getElementById('dof-link');
+            linkElem.href = url;
+            linkElem.textContent = url;
+        }
+
+        // Initiale Link-Erstellung beim Laden
+        updateDofLink();
 
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
@@ -149,7 +182,6 @@
                 const cols = lines[i].split(';');
                 if (cols.length < headers.length) continue;
 
-                // Daten rein aus CSV auslesen – ohne erfundene Fallback-Werte
                 const date = formatToEbirdDate(cols[idx.dato]) || "";
                 const time = cols[idx.turtidfra] || "";
                 const location = cols[idx.loknavn] || "";
@@ -172,7 +204,7 @@
                     time,
                     "",
                     "",
-                    "Traveling", // eBird Standard-Protokoll
+                    "Traveling",
                     "1",
                     "",
                     "Y",
