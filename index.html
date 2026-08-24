@@ -378,6 +378,19 @@
             return result;
         }
 
+        function calculateDuration(startStr, endStr) {
+            if (!startStr || !endStr) return "5";
+            const partsStart = startStr.trim().split(':');
+            const partsEnd = endStr.trim().split(':');
+            if (partsStart.length < 2 || partsEnd.length < 2) return "5";
+
+            const startMinutes = parseInt(partsStart[0]) * 60 + parseInt(partsStart[1]);
+            const endMinutes = parseInt(partsEnd[0]) * 60 + parseInt(partsEnd[1]);
+            
+            const diff = endMinutes - startMinutes;
+            return diff > 0 ? diff.toString() : "5";
+        }
+
         function parseDofbasen(text) {
             const lines = text.split(/\r\n|\n/);
             if (lines.length < 2) {
@@ -420,13 +433,15 @@
                 const species = cols[idx.artnavn] || "";
                 const count = cols[idx.antal] || "";
                 
-                // Kein Fallback mehr auf "Grenen, Skagen" – Ortsname wird direkt aus der Datei übernommen
                 const locationName = (idx.lokalitet !== -1) ? (cols[idx.lokalitet] || "").trim() : "";
 
                 const lat = (idx.lat !== -1 ? cols[idx.lat] : "").replace(',', '.').trim();
                 const lon = (idx.lon !== -1 ? cols[idx.lon] : "").replace(',', '.').trim();
                 const date = formatToEbirdDate(idx.dato !== -1 ? cols[idx.dato] : "") || "";
-                const time = idx.turtidfra !== -1 ? cols[idx.turtidfra] : "";
+                
+                const startTime = idx.turtidfra !== -1 ? cols[idx.turtidfra] : "";
+                const endTime = idx.turtidtil !== -1 ? cols[idx.turtidtil] : "";
+                const duration = calculateDuration(startTime, endTime);
                 
                 const cleanText = (str) => (str || "").replace(/,/g, ';').replace(/"/g, '""');
 
@@ -442,8 +457,8 @@
                 }
 
                 let row = [
-                    species, "", "", count, birdDetails, locationName, lat, lon, date, time,
-                    "", "", "Stationary", observerCount, "", "Y", "", "", checklistNotes
+                    species, "", "", count, birdDetails, locationName, lat, lon, date, startTime,
+                    duration, "", "Stationary", observerCount, "", "Y", "", "", checklistNotes
                 ];
 
                 ebirdRows.push(row);
