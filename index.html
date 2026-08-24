@@ -381,10 +381,12 @@
                 dato: getIndex('Dato'),
                 turtidfra: getIndex('Turtidfra'),
                 turtidtil: getIndex('Turtidtil'),
+                lokalitet: getIndex('Lokalitet'),
                 lat: getIndex('lok_breddegrad'),
                 lon: getIndex('lok_laengdegrad'),
                 artnavn: getIndex('Artnavn'),
                 antal: getIndex('Antal'),
+                medobser: getIndex('Medobser'),
                 turnoter: getIndex('Turnoter'),
                 fuglnoter: getIndex('Fuglnoter')
             };
@@ -399,16 +401,19 @@
 
                 const species = cols[idx.artnavn] || "";
                 const count = cols[idx.antal] || "";
+                const locationName = cols[idx.lokalitet] || "";
                 const lat = (cols[idx.lat] || "").replace(',', '.').trim();
                 const lon = (cols[idx.lon] || "").replace(',', '.').trim();
                 const date = formatToEbirdDate(cols[idx.dato]) || "";
                 const time = cols[idx.turtidfra] || "";
                 const duration = calculateDuration(cols[idx.turtidfra], cols[idx.turtidtil]);
-                const notes = [cols[idx.turnoter], cols[idx.fuglnoter]].filter(Boolean).join(" | ");
+                
+                const birdDetails = cols[idx.fuglnoter] || "";
+                const checklistNotes = [cols[idx.medobser], cols[idx.turnoter]].filter(Boolean).join(" | ");
 
                 let row = [
-                    species, "", "", count, "", "Grenen", lat, lon, date, time,
-                    "Stationary", duration, "", "", "", "Y", notes
+                    species, "", "", count, birdDetails, locationName, lat, lon, date, time,
+                    "Stationary", duration, "", "", "", "Y", checklistNotes
                 ];
 
                 ebirdRows.push(row);
