@@ -425,6 +425,15 @@
             let ebirdRows = [];
             let rowCount = 0;
 
+            // Offizielle eBird-Kopfzeile hinzufügen, damit eBird die Spalten zuordnen kann
+            ebirdRows.push([
+                "Common Name", "Genus", "Species", "Count", "Details", 
+                "Location Name", "Latitude", "Longitude", "Date", "Time", 
+                "Duration (min)", "Effort Distance (km)", "Protocol", 
+                "Number of Observers", "Effort Area", "All Observations Reported", 
+                "State/Province", "County", "Comments"
+            ]);
+
             for (let i = 1; i < lines.length; i++) {
                 if (!lines[i].trim()) continue;
                 const cols = parseCSVLine(lines[i]);
