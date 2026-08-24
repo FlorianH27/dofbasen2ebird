@@ -6,20 +6,73 @@
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #f9f9f9; color: #333; }
         h1 { color: #2c3e50; }
-        .drop-zone { border: 3px dashed #3498db; padding: 40px; text-align: center; background: #fff; cursor: pointer; border-radius: 8px; margin-top: 20px; }
+        .drop-zone { border: 3px dashed #3498db; padding: 30px; text-align: center; background: #fff; cursor: pointer; border-radius: 8px; margin-top: 20px; }
         .drop-zone.dragover { background: #ecf0f1; border-color: #2980b9; }
+        .defaults-box { background: #fff; padding: 20px; border-radius: 8px; margin-top: 20px; border: 1px solid #ddd; }
+        .defaults-box h3 { margin-top: 0; color: #2c3e50; }
+        .form-group { margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+        .form-group label { flex: 1; font-weight: bold; font-size: 14px; }
+        .form-group input, .form-group select { flex: 2; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
         #download-container { display: none; margin-top: 20px; }
         #download-btn { padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
         #download-btn:hover { background: #219653; }
         .ebird-link { display: inline-block; margin-left: 15px; color: #2980b9; text-decoration: none; font-weight: bold; }
         .ebird-link:hover { text-decoration: underline; }
-        pre { background: #eee; padding: 10px; border-radius: 5px; max-height: 200px; overflow-y: auto; }
+        pre { background: #eee; padding: 10px; border-radius: 5px; max-height: 150px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
     <h1>DOFbasen zu eBird Konverter</h1>
     <p>Ziehe deine DOFbasen-CSV-Datei per Drag & Drop in das Feld unten.</p>
+
+    <!-- Konfigurierbare Standardwerte (vorbelegt mit deinen Beispielen und Datum von gestern) -->
+    <div class="defaults-box">
+        <h3>Standardwerte & Fallbacks</h3>
+        <div class="form-group">
+            <label for="def-date">Standard-Datum (Standard: Gestern):</label>
+            <input type="date" id="def-date">
+        </div>
+        <div class="form-group">
+            <label for="def-time">Standard-Uhrzeit:</label>
+            <input type="text" id="def-time" value="06:58">
+        </div>
+        <div class="form-group">
+            <label for="def-location">Standard-Ort:</label>
+            <input type="text" id="def-location" value="Grenen, Skagen">
+        </div>
+        <div class="form-group">
+            <label for="def-lat">Standard-Breitengrad (Latitude):</label>
+            <input type="text" id="def-lat" value="57.74508971556111">
+        </div>
+        <div class="form-group">
+            <label for="def-lon">Standard-Längengrad (Longitude):</label>
+            <input type="text" id="def-lon" value="10.635593026549664">
+        </div>
+        <div class="form-group">
+            <label for="def-species">Standard-Art:</label>
+            <input type="text" id="def-species" value="Rødstrubet Lom">
+        </div>
+        <div class="form-group">
+            <label for="def-count">Standard-Anzahl:</label>
+            <input type="text" id="def-count" value="4">
+        </div>
+        <div class="form-group">
+            <label for="def-protocol">Standard-Protokoll:</label>
+            <select id="def-protocol">
+                <option value="traveling" selected>traveling</option>
+                <option value="stationary">stationary</option>
+                <option value="incidental">incidental</option>
+                <option value="historical">historical</option>
+                <option value="area">area</option>
+                <option value="random">random</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="def-notes">Standard-Notizen:</label>
+            <input type="text" id="def-notes" value="WE3">
+        </div>
+    </div>
 
     <div class="drop-zone" id="dropZone">
         DOFbasen CSV-Datei hierher ziehen oder klicken zum Auswählen
@@ -35,6 +88,14 @@
     <pre id="log">Bereit...</pre>
 
     <script>
+        // Setze das Standard-Datum automatisch auf "gestern" beim Laden der Seite
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yyyy = yesterday.getFullYear();
+        const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
+        const dd = String(yesterday.getDate()).padStart(2, '0');
+        document.getElementById('def-date').value = `${yyyy}-${mm}-${dd}`;
+
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
         const downloadContainer = document.getElementById('download-container');
@@ -43,6 +104,7 @@
 
         let convertedCsvContent = "";
 
+        dropZone.getElementById = (id) => document.getElementById(id);
         dropZone.addEventListener('click', () => fileInput.click());
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
@@ -69,7 +131,7 @@
             };
         }
 
-        function formatDate(dateStr) {
+        function formatToEbirdDate(dateStr) {
             if (!dateStr) return "";
             const parts = dateStr.split('-');
             if (parts.length === 3) {
@@ -84,6 +146,17 @@
                 logMessage("Fehler: Die Datei scheint leer zu sein.");
                 return;
             }
+
+            // Werte aus den Eingabefeldern holen
+            const fallbackDate = formatToEbirdDate(document.getElementById('def-date').value);
+            const fallbackTime = document.getElementById('def-time').value;
+            const fallbackLocation = document.getElementById('def-location').value;
+            const fallbackLat = document.getElementById('def-lat').value;
+            const fallbackLon = document.getElementById('def-lon').value;
+            const fallbackSpecies = document.getElementById('def-species').value;
+            const fallbackCount = document.getElementById('def-count').value;
+            const fallbackProtocol = document.getElementById('def-protocol').value;
+            const fallbackNotes = document.getElementById('def-notes').value;
 
             const headers = lines[0].split(';');
             const getIndex = (name) => headers.indexOf(name);
@@ -100,7 +173,6 @@
                 fuglnoter: getIndex('Fuglnoter')
             };
 
-            // Exakte 19 Spalten des eBird Standards
             let ebirdRows = [[
                 "Common Name", "", "", "Count", "", "Location Name", "Latitude", "Longitude", 
                 "Date", "Time", "", "", "Protocol", "Duration", "Effort Distance", 
@@ -113,35 +185,35 @@
                 const cols = lines[i].split(';');
                 if (cols.length < headers.length) continue;
 
-                const date = formatDate(cols[idx.dato]);
-                const time = cols[idx.turtidfra] || "";
-                const location = cols[idx.loknavn] || "";
-                const species = cols[idx.artnavn] || "";
-                const count = cols[idx.antal] || "1";
-                const lat = (cols[idx.lat] || "").replace(',', '.');
-                const lon = (cols[idx.lon] || "").replace(',', '.');
-                const notes = [cols[idx.turnoter], cols[idx.fuglnoter]].filter(Boolean).join(" | ");
+                const date = formatToEbirdDate(cols[idx.dato]) || fallbackDate;
+                const time = cols[idx.turtidfra] || fallbackTime;
+                const location = cols[idx.loknavn] || fallbackLocation;
+                const species = cols[idx.artnavn] || fallbackSpecies;
+                const count = cols[idx.antal] || fallbackCount;
+                const lat = (cols[idx.lat] || fallbackLat).replace(',', '.');
+                const lon = (cols[idx.lon] || fallbackLon).replace(',', '.');
+                const notes = [cols[idx.turnoter], cols[idx.fuglnoter]].filter(Boolean).join(" | ") || fallbackNotes;
 
                 ebirdRows.push([
-                    species,    // 0: Common Name
-                    "",         // 1
-                    "",         // 2
-                    count,      // 3: Count
-                    "",         // 4
-                    location,   // 5: Location Name
-                    lat,        // 6: Latitude
-                    lon,        // 7: Longitude
-                    date,       // 8: Date (MM/DD/YYYY)
-                    time,       // 9: Time (HH:MM)
-                    "",         // 10
-                    "",         // 11
-                    "Traveling",// 12: Protocol
-                    "1",        // 13: Duration
-                    "",         // 14
-                    "Y",        // 15: All Observations Reported
-                    notes,      // 16: Comments
-                    "",         // 17
-                    ""          // 18
+                    species,
+                    "",
+                    "",
+                    count,
+                    "",
+                    location,
+                    lat,
+                    lon,
+                    date,
+                    time,
+                    "",
+                    "",
+                    fallbackProtocol,
+                    "1",
+                    "",
+                    "Y",
+                    notes,
+                    "",
+                    ""
                 ]);
                 rowCount++;
             }
