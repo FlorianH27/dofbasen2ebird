@@ -197,26 +197,27 @@
                 const duration = calculateDuration(cols[idx.turtidfra], cols[idx.turtidtil]);
                 const notes = [cols[idx.turnoter], cols[idx.fuglnoter]].filter(Boolean).join(" | ");
 
-                // Exakter 19-Spalten-Array gemäß ornitho2eBird Vorlage
+                // Exakter 19-Spalten-Array exakt nach ornitho2eBird-Struktur:
+                // Spalte 17 (Index 16) bleibt numerisch leer bzw. unbesetzt, Notizen wandern ans Ende.
                 let row = [
-                    species,                                                                           // 0
+                    species,                                                                           // 0: Artnavn
                     "",                                                                                // 1
                     "",                                                                                // 2
-                    count,                                                                             // 3
+                    count,                                                                             // 3: Antal
                     "",                                                                                // 4
-                    location,                                                                          // 5
-                    lat,                                                                               // 6
-                    lon,                                                                               // 7
-                    date,                                                                              // 8
-                    time,                                                                              // 9
+                    location,                                                                          // 5: Loknavn
+                    lat,                                                                               // 6: Latitude
+                    lon,                                                                               // 7: Longitude
+                    date,                                                                              // 8: Date
+                    time,                                                                              // 9: Time
                     "",                                                                                // 10
                     "",                                                                                // 11
-                    "Traveling",                                                                       // 12
-                    duration,                                                                          // 13
-                    "",                                                                                // 14
-                    "Y",                                                                               // 15
-                    notes,                                                                             // 16
-                    "",                                                                                // 17
+                    "Traveling",                                                                       // 12: Protocol
+                    duration,                                                                          // 13: Duration
+                    "",                                                                                // 14: Distance
+                    "Y",                                                                               // 15: All obs reported
+                    "",                                                                                // 16: Numerisches Feld (leer gelassen statt Notizen)
+                    notes,                                                                             // 17: Kommentare / Turnoter
                     '<small><a href="https://ornitho2ebird.com/" target="_blank" rel="noopener">Importiert mit ornitho2eBird.</a></small>' // 18
                 ];
 
@@ -224,7 +225,6 @@
                 rowCount++;
             }
 
-            // Generiere CSV ohne Header-Zeile (genau wie im Referenzfile)
             convertedCsvContent = ebirdRows.map(e => e.map(val => `"${val}"`).join(",")).join("\n");
             logMessage(`Erfolgreich ${rowCount} Beobachtungen konvertiert!`);
             downloadContainer.style.display = 'block';
