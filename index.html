@@ -420,10 +420,8 @@
                 const species = cols[idx.artnavn] || "";
                 const count = cols[idx.antal] || "";
                 
-                let locationName = (idx.lokalitet !== -1) ? (cols[idx.lokalitet] || "").trim() : "";
-                if (!locationName) {
-                    locationName = "Grenen, Skagen";
-                }
+                // Kein Fallback mehr auf "Grenen, Skagen" – Ortsname wird direkt aus der Datei übernommen
+                const locationName = (idx.lokalitet !== -1) ? (cols[idx.lokalitet] || "").trim() : "";
 
                 const lat = (idx.lat !== -1 ? cols[idx.lat] : "").replace(',', '.').trim();
                 const lon = (idx.lon !== -1 ? cols[idx.lon] : "").replace(',', '.').trim();
@@ -437,15 +435,15 @@
                 const turnoterVal = cleanText(idx.turnoter !== -1 ? cols[idx.turnoter] : "");
                 const checklistNotes = [medobserVal, turnoterVal].filter(Boolean).join(" | ");
 
-                // Exakte eBird 19-Spalten Reihenfolge basierend auf dem Referenz-Template:
-                // 0: Common Name, 1: Genus, 2: Species, 3: Count, 4: Details, 
-                // 5: Location Name, 6: Latitude, 7: Longitude, 8: Date, 9: Time, 
-                // 10: Duration (min), 11: Effort Distance (km), 12: Protocol, 
-                // 13: Number of Observers, 14: Effort Area, 15: All Observations Reported, 
-                // 16: State/Province (leer), 17: County (leer), 18: Comments
+                let observerCount = "1";
+                if (medobserVal) {
+                    const splitObservers = medobserVal.split(';');
+                    observerCount = (splitObservers.length + 1).toString();
+                }
+
                 let row = [
                     species, "", "", count, birdDetails, locationName, lat, lon, date, time,
-                    "", "", "Traveling", "1", "", "Y", "", "", checklistNotes
+                    "", "", "Stationary", observerCount, "", "Y", "", "", checklistNotes
                 ];
 
                 ebirdRows.push(row);
