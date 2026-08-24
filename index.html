@@ -122,26 +122,30 @@
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
-        .link-output {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px dashed var(--border);
+        .link-output-box {
+            margin-top: 16px;
+        }
+
+        .btn-box {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }
-
-        .link-output a {
-            font-size: 12px;
-            color: var(--accent);
+            justify-content: center;
+            width: 100%;
+            background: #f1f5f9;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
             text-decoration: none;
-            word-break: break-all;
-            flex: 1;
+            transition: background 0.2s, border-color 0.2s;
         }
 
-        .link-output a:hover {
-            text-decoration: underline;
+        .btn-box:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+            text-decoration: none;
         }
 
         .drop-zone {
@@ -260,8 +264,8 @@
                 <label for="query-observer">Beobachter Kürzel (Observer)</label>
                 <input type="text" id="query-observer" value="9990SKAF" oninput="updateDofLink()">
             </div>
-            <div class="link-output">
-                <a id="dof-link" href="#" target="_blank">-</a>
+            <div class="link-output-box">
+                <a id="dof-link" href="#" target="_blank" class="btn-box">DOFbasen Abfrage öffnen &rarr;</a>
             </div>
         </div>
 
@@ -275,7 +279,7 @@
         <div class="log-box" id="logBox">Bereit...</div>
 
         <div class="actions" id="actionsContainer">
-            <button id="downloadBtn">eBird CSV herunterladen</button>
+            <button id="download-btn">eBird CSV herunterladen</button>
             <button class="btn-secondary" onclick="window.open('https://ebird.org/import/upload.form', '_blank')">Zu eBird Upload</button>
         </div>
     </div>
