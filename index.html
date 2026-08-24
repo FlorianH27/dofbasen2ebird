@@ -375,20 +375,27 @@
             }
 
             const headers = lines[0].split(';');
-            const getIndex = (name) => headers.indexOf(name);
+            const getIndex = (names) => {
+                if (!Array.isArray(names)) names = [names];
+                for (let name of names) {
+                    let idx = headers.indexOf(name);
+                    if (idx !== -1) return idx;
+                }
+                return -1;
+            };
 
             const idx = {
-                dato: getIndex('Dato'),
-                turtidfra: getIndex('Turtidfra'),
-                turtidtil: getIndex('Turtidtil'),
-                lokalitet: getIndex('Lokalitet'),
-                lat: getIndex('lok_breddegrad'),
-                lon: getIndex('lok_laengdegrad'),
-                artnavn: getIndex('Artnavn'),
-                antal: getIndex('Antal'),
-                medobser: getIndex('Medobser'),
-                turnoter: getIndex('Turnoter'),
-                fuglnoter: getIndex('Fuglnoter')
+                dato: getIndex(['Dato']),
+                turtidfra: getIndex(['Turtidfra']),
+                turtidtil: getIndex(['Turtidtil']),
+                lokalitet: getIndex(['Loknavn', 'Lokalitet', 'Loklitet', 'lok_navn']),
+                lat: getIndex(['lok_breddegrad']),
+                lon: getIndex(['lok_laengdegrad']),
+                artnavn: getIndex(['Artnavn']),
+                antal: getIndex(['Antal']),
+                medobser: getIndex(['Medobser']),
+                turnoter: getIndex(['Turnoter']),
+                fuglnoter: getIndex(['Fuglnoter'])
             };
 
             let ebirdRows = [];
@@ -401,15 +408,25 @@
 
                 const species = cols[idx.artnavn] || "";
                 const count = cols[idx.antal] || "";
-                const locationName = cols[idx.lokalitet] || "";
-                const lat = (cols[idx.lat] || "").replace(',', '.').trim();
-                const lon = (cols[idx.lon] || "").replace(',', '.').trim();
-                const date = formatToEbirdDate(cols[idx.dato]) || "";
-                const time = cols[idx.turtidfra] || "";
-                const duration = calculateDuration(cols[idx.turtidfra], cols[idx.turtidtil]);
                 
-                const birdDetails = cols[idx.fuglnoter] || "";
-                const checklistNotes = [cols[idx.medobser], cols[idx.turnoter]].filter(Boolean).join(" | ");
+                let locationName = (idx.lokalitet !== -1) ? (cols[idx.lokalitet] || "").trim() : "";
+                if (!locationName) {
+                    locationName = "Grenen, Skagen";
+                }
+
+                const lat = (idx.lat !== -1 ? cols[idx.lat] : "").replace(',', '.').trim();
+                const lon = (idx.lon !== -1 ? cols[idx.lon] : "").replace(',', '.').trim();
+                const date = formatToEbirdDate(idx.dato !== -1 ? cols[idx.dato] : "") || "";
+                const time = idx.turtidfra !== -1 ? cols[idx.turtidfra] : "";
+                const duration = calculateDuration(
+                    idx.turtidfra !== -1 ? cols[idx.turtidfra] : "", 
+                    idx.turtidtil !== -1 ? cols[idx.turtidtil] : ""
+                );
+                
+                const birdDetails = idx.fuglnoter !== -1 ? (cols[idx.fuglnoter] || "") : "";
+                const medobserVal = idx.medobser !== -1 ? (cols[idx.medobser] || "") : "";
+                const turnoterVal = idx.turnoter !== -1 ? (cols[idx.turnoter] || "") : "";
+                const checklistNotes = [medobserVal, turnoterVal].filter(Boolean).join(" | ");
 
                 let row = [
                     species, "", "", count, birdDetails, locationName, lat, lon, date, time,
