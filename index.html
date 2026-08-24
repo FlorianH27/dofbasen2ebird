@@ -313,7 +313,6 @@
             
             const linkElem = document.getElementById('dof-link');
             linkElem.href = url;
-            linkElem.textContent = url;
         }
 
         updateDofLink();
@@ -382,9 +381,6 @@
                 dato: getIndex('Dato'),
                 turtidfra: getIndex('Turtidfra'),
                 turtidtil: getIndex('Turtidtil'),
-                loknavn: getIndex('Loknavn'),
-                lat: getIndex('lok_breddegrad'),
-                lon: getIndex('lok_laengdegrad'),
                 artnavn: getIndex('Artnavn'),
                 antal: getIndex('Antal'),
                 turnoter: getIndex('Turnoter'),
@@ -401,16 +397,13 @@
 
                 const species = cols[idx.artnavn] || "";
                 const count = cols[idx.antal] || "";
-                const location = cols[idx.loknavn] || "";
-                const lat = (cols[idx.lat] || "").replace(',', '.').trim();
-                const lon = (cols[idx.lon] || "").replace(',', '.').trim();
                 const date = formatToEbirdDate(cols[idx.dato]) || "";
                 const time = cols[idx.turtidfra] || "";
                 const duration = calculateDuration(cols[idx.turtidfra], cols[idx.turtidtil]);
                 const notes = [cols[idx.turnoter], cols[idx.fuglnoter]].filter(Boolean).join(" | ");
 
                 let row = [
-                    species, "", "", count, "", "Grenen", lat, lon, date, time,
+                    species, "", "", count, "", "Grenen", "", "", date, time,
                     "Stationary", duration, "", "", "", "Y", notes
                 ];
 
