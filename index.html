@@ -352,13 +352,6 @@
             };
         }
 
-        function formatToEbirdDate(dateStr) {
-            if (!dateStr) return "";
-            const parts = dateStr.split('-');
-            return parts.length === 3 ? `${parts[1]}/${parts[2]}/${parts[0]}` : dateStr;
-        }
-
-        // CSV-Parser, der Semikolons innerhalb von Anführungszeichen ignoriert
         function parseCSVLine(text) {
             let result = [];
             let current = '';
@@ -413,8 +406,8 @@
                 turtidfra: getIndex(['Turtidfra']),
                 turtidtil: getIndex(['Turtidtil']),
                 lokalitet: getIndex(['Loknavn', 'Lokalitet', 'Loklitet', 'lok_navn']),
-                lat: getIndex(['lok_breddegrad']),
-                lon: getIndex(['lok_laengdegrad']),
+                lat: getIndex(['lok_breddegrad', 'obs_breddegrad']),
+                lon: getIndex(['lok_laengdegrad', 'obs_laengdegrad']),
                 artnavn: getIndex(['Artnavn']),
                 antal: getIndex(['Antal']),
                 medobser: getIndex(['Medobser']),
@@ -425,7 +418,6 @@
             let ebirdRows = [];
             let rowCount = 0;
 
-            // Offizielle eBird-Kopfzeile hinzufügen, damit eBird die Spalten zuordnen kann
             ebirdRows.push([
                 "Common Name", "Genus", "Species", "Count", "Details", 
                 "Location Name", "Latitude", "Longitude", "Date", "Time", 
@@ -446,7 +438,17 @@
 
                 const lat = (idx.lat !== -1 ? cols[idx.lat] : "").replace(',', '.').trim();
                 const lon = (idx.lon !== -1 ? cols[idx.lon] : "").replace(',', '.').trim();
-                const date = formatToEbirdDate(idx.dato !== -1 ? cols[idx.dato] : "") || "";
+                
+                let rawDate = idx.dato !== -1 ? cols[idx.dato] : "";
+                let date = "";
+                if (rawDate) {
+                    const p = rawDate.split('-');
+                    if (p.length === 3) {
+                        date = `${p[1]}/${p[2]}/${p[0]}`;
+                    } else {
+                        date = rawDate;
+                    }
+                }
                 
                 const startTime = idx.turtidfra !== -1 ? cols[idx.turtidfra] : "";
                 const endTime = idx.turtidtil !== -1 ? cols[idx.turtidtil] : "";
@@ -461,13 +463,13 @@
 
                 let observerCount = "1";
                 if (medobserVal) {
-                    const splitObservers = medobserVal.split(';');
+                    const splitObservers = medobserVal.split(/[,;]/);
                     observerCount = (splitObservers.length + 1).toString();
                 }
 
                 let row = [
                     species, "", "", count, birdDetails, locationName, lat, lon, date, startTime,
-                    duration, "", "Stationary", observerCount, "", "Y", "", "", checklistNotes
+                    duration, "", "stationary", observerCount, "", "Y", "", "", checklistNotes
                 ];
 
                 ebirdRows.push(row);
