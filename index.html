@@ -8,11 +8,11 @@
         h1 { color: #2c3e50; }
         .drop-zone { border: 3px dashed #3498db; padding: 30px; text-align: center; background: #fff; cursor: pointer; border-radius: 8px; margin-top: 20px; }
         .drop-zone.dragover { background: #ecf0f1; border-color: #2980b9; }
-        .defaults-box { background: #fff; padding: 20px; border-radius: 8px; margin-top: 20px; border: 1px solid #ddd; }
-        .defaults-box h3 { margin-top: 0; color: #2c3e50; }
+        .query-box { background: #fff; padding: 20px; border-radius: 8px; margin-top: 20px; border: 1px solid #ddd; }
+        .query-box h3 { margin-top: 0; color: #2c3e50; }
         .form-group { margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
         .form-group label { flex: 1; font-weight: bold; font-size: 14px; }
-        .form-group input, .form-group select { flex: 2; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+        .form-group input { flex: 2; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
         #download-container { display: none; margin-top: 20px; }
         #download-btn { padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
         #download-btn:hover { background: #219653; }
@@ -24,54 +24,24 @@
 <body>
 
     <h1>DOFbasen zu eBird Konverter</h1>
-    <p>Ziehe deine DOFbasen-CSV-Datei per Drag & Drop in das Feld unten.</p>
+    <p>Konvertiere deine exportierte DOFbasen-CSV in das eBird-Format.</p>
 
-    <!-- Konfigurierbare Standardwerte (vorbelegt mit deinen Beispielen und Datum von gestern) -->
-    <div class="defaults-box">
-        <h3>Standardwerte & Fallbacks</h3>
+    <!-- Abfrage-Parameter (Datumsbereich von gestern bis heute, Observer) -->
+    <div class="query-box">
+        <h3>DOFbasen Abfrage-Parameter</h3>
         <div class="form-group">
-            <label for="def-date">Standard-Datum (Standard: Gestern):</label>
-            <input type="date" id="def-date">
+            <label for="query-date-from">Datum von (Standard: Gestern):</label>
+            <input type="date" id="query-date-from">
         </div>
         <div class="form-group">
-            <label for="def-time">Standard-Uhrzeit:</label>
-            <input type="text" id="def-time" value="06:58">
+            <label for="query-date-to">Datum bis (Standard: Heute):</label>
+            <input type="date" id="query-date-to">
         </div>
         <div class="form-group">
-            <label for="def-location">Standard-Ort:</label>
-            <input type="text" id="def-location" value="Grenen, Skagen">
+            <label for="query-observer">Beobachter (Observer):</label>
+            <input type="text" id="query-observer" value="Skagen Fuglestation">
         </div>
-        <div class="form-group">
-            <label for="def-lat">Standard-Breitengrad (Latitude):</label>
-            <input type="text" id="def-lat" value="57.74508971556111">
-        </div>
-        <div class="form-group">
-            <label for="def-lon">Standard-Längengrad (Longitude):</label>
-            <input type="text" id="def-lon" value="10.635593026549664">
-        </div>
-        <div class="form-group">
-            <label for="def-species">Standard-Art:</label>
-            <input type="text" id="def-species" value="Rødstrubet Lom">
-        </div>
-        <div class="form-group">
-            <label for="def-count">Standard-Anzahl:</label>
-            <input type="text" id="def-count" value="4">
-        </div>
-        <div class="form-group">
-            <label for="def-protocol">Standard-Protokoll:</label>
-            <select id="def-protocol">
-                <option value="traveling" selected>traveling</option>
-                <option value="stationary">stationary</option>
-                <option value="incidental">incidental</option>
-                <option value="historical">historical</option>
-                <option value="area">area</option>
-                <option value="random">random</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="def-notes">Standard-Notizen:</label>
-            <input type="text" id="def-notes" value="WE3">
-        </div>
+        <p style="font-size: 12px; color: #666; margin-bottom: 0;">Hinweis: Alle Daten (Art, Anzahl, Datum, Uhrzeit, Ort, Koordinaten, Notizen) werden ausschließlich aus den jeweiligen Spalten der hochgeladenen CSV ausgelesen.</p>
     </div>
 
     <div class="drop-zone" id="dropZone">
@@ -88,13 +58,19 @@
     <pre id="log">Bereit...</pre>
 
     <script>
-        // Setze das Standard-Datum automatisch auf "gestern" beim Laden der Seite
-        const yesterday = new Date();
+        // Setze Standard-Datum: "von" = gestern, "bis" = heute
+        const today = new Date();
+        const yyyyToday = today.getFullYear();
+        const mmToday = String(today.getMonth() + 1).padStart(2, '0');
+        const ddToday = String(today.getDate()).padStart(2, '0');
+        document.getElementById('query-date-to').value = `${yyyyToday}-${mmToday}-${ddToday}`;
+
+        const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
-        const yyyy = yesterday.getFullYear();
-        const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
-        const dd = String(yesterday.getDate()).padStart(2, '0');
-        document.getElementById('def-date').value = `${yyyy}-${mm}-${dd}`;
+        const yyyyYest = yesterday.getFullYear();
+        const mmYest = String(yesterday.getMonth() + 1).padStart(2, '0');
+        const ddYest = String(yesterday.getDate()).padStart(2, '0');
+        document.getElementById('query-date-from').value = `${yyyyYest}-${mmYest}-${ddYest}`;
 
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
@@ -104,7 +80,6 @@
 
         let convertedCsvContent = "";
 
-        dropZone.getElementById = (id) => document.getElementById(id);
         dropZone.addEventListener('click', () => fileInput.click());
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
@@ -147,17 +122,6 @@
                 return;
             }
 
-            // Werte aus den Eingabefeldern holen
-            const fallbackDate = formatToEbirdDate(document.getElementById('def-date').value);
-            const fallbackTime = document.getElementById('def-time').value;
-            const fallbackLocation = document.getElementById('def-location').value;
-            const fallbackLat = document.getElementById('def-lat').value;
-            const fallbackLon = document.getElementById('def-lon').value;
-            const fallbackSpecies = document.getElementById('def-species').value;
-            const fallbackCount = document.getElementById('def-count').value;
-            const fallbackProtocol = document.getElementById('def-protocol').value;
-            const fallbackNotes = document.getElementById('def-notes').value;
-
             const headers = lines[0].split(';');
             const getIndex = (name) => headers.indexOf(name);
 
@@ -185,14 +149,15 @@
                 const cols = lines[i].split(';');
                 if (cols.length < headers.length) continue;
 
-                const date = formatToEbirdDate(cols[idx.dato]) || fallbackDate;
-                const time = cols[idx.turtidfra] || fallbackTime;
-                const location = cols[idx.loknavn] || fallbackLocation;
-                const species = cols[idx.artnavn] || fallbackSpecies;
-                const count = cols[idx.antal] || fallbackCount;
-                const lat = (cols[idx.lat] || fallbackLat).replace(',', '.');
-                const lon = (cols[idx.lon] || fallbackLon).replace(',', '.');
-                const notes = [cols[idx.turnoter], cols[idx.fuglnoter]].filter(Boolean).join(" | ") || fallbackNotes;
+                // Daten rein aus CSV auslesen – ohne erfundene Fallback-Werte
+                const date = formatToEbirdDate(cols[idx.dato]) || "";
+                const time = cols[idx.turtidfra] || "";
+                const location = cols[idx.loknavn] || "";
+                const species = cols[idx.artnavn] || "";
+                const count = cols[idx.antal] || "";
+                const lat = (cols[idx.lat] || "").replace(',', '.');
+                const lon = (cols[idx.lon] || "").replace(',', '.');
+                const notes = [cols[idx.turnoter], cols[idx.fuglnoter]].filter(Boolean).join(" | ");
 
                 ebirdRows.push([
                     species,
@@ -207,7 +172,7 @@
                     time,
                     "",
                     "",
-                    fallbackProtocol,
+                    "Traveling", // eBird Standard-Protokoll
                     "1",
                     "",
                     "Y",
